@@ -1,4 +1,3 @@
-from pprint import pprint
 import httplib2
 import apiclient
 from oauth2client.service_account import ServiceAccountCredentials
@@ -28,16 +27,19 @@ def write_to_file(file_name, list_to_write):
     :return: ничего
     """
     with open(file_name, 'w') as table:
+        day = list_to_write['values'][0][0]
         for row in list_to_write['values']:
+            if row[0] == '':
+                table.write(day)
+            else:
+                day = row[0]
+                table.write(day)
             for pos in range(len(list_to_write['values'][0])):
-                if pos < (len(row)):
-                    table.write('|')
-                if pos < len(row):
+                if (pos < len(row)) and (pos != 0):
                     table.write(row[pos])
                 if (pos >= len(row)) and (len(row)) == 3:
-                    table.write('|')
                     table.write(row[2])
-                if (pos >= len(row)) and (len(row)) == 2:
+                if pos < (len(list_to_write['values'][0]) - 1):
                     table.write('|')
             table.write('\n')
     return 0
