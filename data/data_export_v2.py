@@ -19,6 +19,50 @@ def clear_row(table):
     return table
 
 
+def write_row(row, settings, file):
+    """Записывает строку таблицы в файл
+
+    :param file: дескриптор файла, в который производится запись
+    :param row: строка таблицы
+    :param settings: параметры записи в виде листа, который содержит количество объединенных ячеек
+    :return: ничего
+    """
+    position = 0
+    for number_of_merged_cells in settings:
+        position += 1
+        for counter in range(number_of_merged_cells):
+            file.write('|')
+            if position < len(row):
+                file.write(row[position])
+
+
+def row_type(row, number_of_groups):
+    """ Принимает строку таблицы и возвращает лист, в котором последовательно содержится количество объединенных ячеек
+
+    :param number_of_groups: количество групп, для которых имеется предмет в row
+    :param row: строка таблицы, в виде лист
+    :return: лист с настройками для записи
+    """
+    setting_list = []
+    for counter in range(number_of_groups + 1):
+        setting_list.append(1)
+    if len(row) == 3:
+        setting_list = [1, number_of_groups]
+        return setting_list
+    if len(row) > 3:
+        if row[2].find('Иcтория') != -1:
+            setting_list = [1, 4, 2]
+            return setting_list
+        if row[len(row)-1].find('объектно') != -1:
+            setting_list = [1, 1, 1, 1, 1, 2]
+            return setting_list
+        else:
+            return setting_list
+
+    else:
+        return setting_list
+
+
 def write_to_file(file_name, list_to_write):
     """Переписывает лист в файл с разделителем '|'
 
@@ -34,13 +78,7 @@ def write_to_file(file_name, list_to_write):
             else:
                 day = row[0]
                 table.write(day)
-            for pos in range(len(list_to_write['values'][0])):
-                if (pos < len(row)) and (pos != 0):
-                    table.write(row[pos])
-                if (pos >= len(row)) and (len(row)) == 3:
-                    table.write(row[2])
-                if pos < (len(list_to_write['values'][0]) - 1):
-                    table.write('|')
+            write_row(row, row_type(row, 6), table)
             table.write('\n')
     return 0
 
@@ -60,6 +98,17 @@ values = service.spreadsheets().values().get(
     range='A1:H61',
     majorDimension='ROWS'
 ).execute()
+
 values = clear_row(values)
-write_to_file('shedule_data.csv', values)
+
+values['values'].pop(16)
+
+#write_to_file('schedule_data.csv', values)
+print(values['values'][13])
+print(row_type(values['values'][13], 6))
+write_to_file('schedule_data.csv', values)
 exit()
+
+
+
+
