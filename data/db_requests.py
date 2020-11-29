@@ -56,8 +56,3 @@ def add_user_to_table(db_cursor, user_id, group):
                           'WHERE id = ' + str(user_id))
         print('note was updated')
 
-
-connection = sqlite3.connect('users_datasss.db')
-
-cursor = connection.cursor()
-
