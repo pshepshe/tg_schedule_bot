@@ -3,6 +3,9 @@ import apiclient
 from oauth2client.service_account import ServiceAccountCredentials
 
 
+week = {"ПОНЕДЕЛЬНИК": 0, "ВТОРНИК": 1, "СРЕДА": 2, "ЧЕТВЕРГ": 3, "ПЯТНИЦА": 4, "СУББОТА": 5, "День": 'День'}
+
+
 def clear_row(table):
     """Чистит лист от пустых элементов и убирает из ячеек переходы на новую строку
 
@@ -20,7 +23,7 @@ def clear_row(table):
 
 
 def write_row(row, settings, file):
-    """Записывает строку таблицы в файл
+    """Записывает строку таблицы в файл на основании количества объединенных ячеек, стоящих подряд
 
     :param file: дескриптор файла, в который производится запись
     :param row: строка таблицы
@@ -44,16 +47,16 @@ def row_type(row, number_of_groups):
     :return: лист с настройками для записи
     """
     setting_list = []
-    for counter in range(number_of_groups + 1):
+    for counter in range(number_of_groups + 1):                 # дефолтная строка на основании длины строки
         setting_list.append(1)
     if len(row) == 3:
         setting_list = [1, number_of_groups]
         return setting_list
     if len(row) > 3:
-        if row[2].find('Иcтория') != -1:
+        if row[2].find('Иcтория') != -1:                        # обнаружение истории пераого курса
             setting_list = [1, 4, 2]
             return setting_list
-        if row[len(row)-1].find('объектно') != -1:
+        if row[len(row)-1].find('объектно') != -1:              # обнаружение лекций ООП первого курса
             setting_list = [1, 1, 1, 1, 1, 2]
             return setting_list
         else:
@@ -74,10 +77,10 @@ def write_to_file(file_name, list_to_write):
         day = list_to_write['values'][0][0]
         for row in list_to_write['values']:
             if row[0] == '':
-                table.write(day)
+                table.write(str(week[day]))
             else:
                 day = row[0]
-                table.write(day)
+                table.write(str(week[day]))
             write_row(row, row_type(row, 6), table)
             table.write('\n')
     return 0
@@ -103,9 +106,6 @@ values = clear_row(values)
 
 values['values'].pop(16)
 
-#write_to_file('schedule_data.csv', values)
-print(values['values'][13])
-print(row_type(values['values'][13], 6))
 write_to_file('schedule_data.csv', values)
 exit()
 
