@@ -32,34 +32,51 @@ def start_message(message):
 
 @bot.message_handler(content_types=['text'])
 def send_text(message):
+    global level_id
     print(message)
-    if message.text.lower() == 'привет':
-        bot.send_message(message.chat.id, 'Привет')
-    elif message.text.lower() == 'пока':
-        bot.send_message(message.chat.id, 'Прощай')
-    elif message.text.lower() == 'стикер':
-        bot.send_sticker(message.chat.id, 'CAACAgQAAxkBAAO_X7gH9in8dNjxPQxr-yGrckY8tF4AAhkBAAImEKQPn2FCCxlUWG8eBA')
-    elif message.text.lower() == 'расписание':
-        bot.send_message(message.chat.id, 'Выбери прромежуток времени', reply_markup=keyboard_days)
-    elif message.text.lower() in day_of_week:
-        day_number = str(day_of_week.index(message.text.lower()))
-        bot.send_message(message.chat.id, str(day_number), reply_markup=keyboard_days)
-    elif message.text.lower() == 'на сегодня':
-        dayweek = datetime.datetime.now().weekday()
-        bot.send_message(message.chat.id, str(dayweek), reply_markup=keyboard_days)
-    elif message.text.lower() == 'на завтра':
-        dayweek = (datetime.datetime.now().weekday() + 1) % 7
-        bot.send_message(message.chat.id, str(dayweek), reply_markup=keyboard_days)
-    elif message.text.lower() == 'полное расписание':
-        bot.send_message(message.chat.id, 'all', reply_markup=keyboard_days)
-    elif message.text.lower() == 'выбор группы':
-        bot.send_message(message.chat.id, 'Выбери номер курса', reply_markup=keyboard_change_course)
-    elif message.text.lower() == 'время':
-        bot.send_message(message.chat.id, str(datetime.datetime.now()) + ' ' + str(datetime.datetime.now().weekday()))
-    elif message.text.lower() == 'назад':
+    if level_id == '0':
+        if message.text.lower() == 'привет':
+            bot.send_message(message.chat.id, 'Привет')
+        elif message.text.lower() == 'пока':
+            bot.send_message(message.chat.id, 'Прощай')
+        elif message.text.lower() == 'стикер':
+            bot.send_sticker(message.chat.id, 'CAACAgQAAxkBAAO_X7gH9in8dNjxPQxr-yGrckY8tF4AAhkBAAImEKQPn2FCCxlUWG8eBA')
+        elif message.text.lower() == 'время':
+            bot.send_message(message.chat.id,
+                             str(datetime.datetime.now()) + ' ' + str(datetime.datetime.now().weekday()))
+        elif message.text.lower() == 'расписание':
+            level_id = '1_1'
+            bot.send_message(message.chat.id, 'Выбери прромежуток времени', reply_markup=keyboard_days)
+        elif message.text.lower() == 'выбор группы':
+            level_id = '2_1'
+            bot.send_message(message.chat.id, 'Введите свою группу', reply_markup=keyboard_change_course)
+
+    if level_id == '1_1':
+        if message.text.lower() in day_of_week:
+            day_number = str(day_of_week.index(message.text.lower()))
+            bot.send_message(message.chat.id, str(day_number), reply_markup=keyboard_days)
+        elif message.text.lower() == 'на сегодня':
+            dayweek = datetime.datetime.now().weekday()
+            bot.send_message(message.chat.id, str(dayweek), reply_markup=keyboard_days)
+        elif message.text.lower() == 'на завтра':
+            dayweek = (datetime.datetime.now().weekday() + 1) % 7
+            bot.send_message(message.chat.id, str(dayweek), reply_markup=keyboard_days)
+        elif message.text.lower() == 'полное расписание':
+            bot.send_message(message.chat.id, 'all', reply_markup=keyboard_days)
+
+    if level_id == '2_1':
+        group = message.text.lower()
+        if True:    # проверка группы
+            level_id = '0'
+            bot.send_message(message.chat.id, 'correct', reply_markup=keyboard_start)
+        else:
+            bot.send_message(message.chat.id, 'Такой группы не существует')
+
+    if message.text.lower() == 'назад':
+        level_id = '0'
         bot.send_message(message.chat.id, '-', reply_markup=keyboard_start)
-    else:
-        bot.send_message(message.chat.id, 'Такая команда не существует')
+    #else:
+    #    bot.send_message(message.chat.id, 'Такая команда не существует')
 
 
 @bot.message_handler(content_types=['sticker'])
@@ -69,4 +86,9 @@ def sticker_id(message):
     bot.send_sticker(message.chat.id, message.sticker.file_id)
 
 
+def levelback(id):
+    pass
+
+
+level_id = '0'
 bot.polling()
