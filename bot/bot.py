@@ -3,7 +3,6 @@ import datetime
 
 bot = telebot.TeleBot('1475926428:AAHcGfNcx0VpOvPkiQt6_1EuRjajyMo86UY')
 
-
 day_of_week = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
 
 keyboard_start = telebot.types.ReplyKeyboardMarkup()
@@ -18,10 +17,8 @@ keyboard_days.row('Четверг', 'Пятница', 'Суббота')
 keyboard_days.row('На сегодня', 'На завтра', 'Полное расписание')
 keyboard_days.row('Назад')
 
-keyboard_change_course = telebot.types.ReplyKeyboardMarkup()
-keyboard_change_course.row('1', '2')
-keyboard_change_course.row('3', '4')
-keyboard_change_course.row('Назад')
+keyboard_null = telebot.types.ReplyKeyboardMarkup()
+keyboard_null.row('Назад')
 
 
 @bot.message_handler(commands=['start'])
@@ -34,7 +31,19 @@ def start_message(message):
 def send_text(message):
     global level_id
     print(message)
-    if level_id == '0':
+    if message.text.lower() == 'назад':
+        level_id = '0'
+        bot.send_message(message.chat.id, '-', reply_markup=keyboard_start)
+
+    elif level_id == '2_1':
+        group = message.text.lower()
+        if True:    # проверка группы
+            level_id = '0'
+            bot.send_message(message.chat.id, 'correct', reply_markup=keyboard_start)
+        else:
+            bot.send_message(message.chat.id, 'Такой группы не существует')
+
+    elif level_id == '0':
         if message.text.lower() == 'привет':
             bot.send_message(message.chat.id, 'Привет')
         elif message.text.lower() == 'пока':
@@ -49,9 +58,9 @@ def send_text(message):
             bot.send_message(message.chat.id, 'Выбери прромежуток времени', reply_markup=keyboard_days)
         elif message.text.lower() == 'выбор группы':
             level_id = '2_1'
-            bot.send_message(message.chat.id, 'Введите свою группу', reply_markup=keyboard_change_course)
+            bot.send_message(message.chat.id, 'Введите свою группу', reply_markup=keyboard_null)
 
-    if level_id == '1_1':
+    elif level_id == '1_1':
         if message.text.lower() in day_of_week:
             day_number = str(day_of_week.index(message.text.lower()))
             bot.send_message(message.chat.id, str(day_number), reply_markup=keyboard_days)
@@ -64,17 +73,6 @@ def send_text(message):
         elif message.text.lower() == 'полное расписание':
             bot.send_message(message.chat.id, 'all', reply_markup=keyboard_days)
 
-    if level_id == '2_1':
-        group = message.text.lower()
-        if True:    # проверка группы
-            level_id = '0'
-            bot.send_message(message.chat.id, 'correct', reply_markup=keyboard_start)
-        else:
-            bot.send_message(message.chat.id, 'Такой группы не существует')
-
-    if message.text.lower() == 'назад':
-        level_id = '0'
-        bot.send_message(message.chat.id, '-', reply_markup=keyboard_start)
     #else:
     #    bot.send_message(message.chat.id, 'Такая команда не существует')
 
