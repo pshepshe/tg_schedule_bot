@@ -1,7 +1,10 @@
 import telebot
 import datetime
+import db_requests
+import time
 
-bot = telebot.TeleBot('1475926428:AAHcGfNcx0VpOvPkiQt6_1EuRjajyMo86UY')
+
+bot = telebot.TeleBot('place_token_here')
 
 day_of_week = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
 
@@ -16,6 +19,11 @@ keyboard_days.row('Понедельник', 'Вторник', 'Среда')
 keyboard_days.row('Четверг', 'Пятница', 'Суббота')
 keyboard_days.row('На сегодня', 'На завтра', 'Полное расписание')
 keyboard_days.row('Назад')
+
+keyboard_groups = telebot.types.ReplyKeyboardMarkup()
+keyboard_groups.row('20.Б01-мкн', '20.Б02-мкн', '20.Б03-мкн')
+keyboard_groups.row('20.Б04-мкн', '20.Б05-мкн', '20.Б06-мкн')
+keyboard_groups.row('Назад')
 
 keyboard_null = telebot.types.ReplyKeyboardMarkup()
 keyboard_null.row('Назад')
@@ -36,15 +44,8 @@ def send_text(message):
         bot.send_message(message.chat.id, '-', reply_markup=keyboard_start)
 
     elif level_id == '2_1':
-        group = message.text.lower()
-        if chek_group(group):    # проверка группы
-            level_id = '0'
-            bot.send_message(message.chat.id, 'correct', reply_markup=keyboard_start)
-            full_group = group.upper() + '-мкн'
-            print(message.from_user.id, group, full_group)
-        else:
-            bot.send_message(message.chat.id, 'Такой группы не существует')
-            bot.send_message(message.chat.id, 'Попробуйте ещё раз')
+        group = message.text
+        db_requests.add_user_to_table(str(message.chat.id), group)
 
     elif level_id == '0':
         if message.text.lower() == 'привет':
@@ -61,18 +62,21 @@ def send_text(message):
             bot.send_message(message.chat.id, 'Выбери прромежуток времени', reply_markup=keyboard_days)
         elif message.text.lower() == 'выбор группы':
             level_id = '2_1'
-            bot.send_message(message.chat.id, 'Введите свою группу', reply_markup=keyboard_null)
+            bot.send_message(message.chat.id, 'Введите свою группу', reply_markup=keyboard_groups)
 
     elif level_id == '1_1':
         if message.text.lower() in day_of_week:
-            day_number = str(day_of_week.index(message.text.lower()))
-            bot.send_message(message.chat.id, str(day_number), reply_markup=keyboard_days)
+            day_number = day_of_week.index(message.text.lower())
+            schedule = db_requests.get_schedule(str(message.from_user.id))
+            bot.send_message(message.chat.id, schedule[day_number], reply_markup=keyboard_days)
         elif message.text.lower() == 'на сегодня':
             dayweek = datetime.datetime.now().weekday()
-            bot.send_message(message.chat.id, str(dayweek), reply_markup=keyboard_days)
+            schedule = db_requests.get_schedule(str(message.from_user.id))
+            bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_days)
         elif message.text.lower() == 'на завтра':
             dayweek = (datetime.datetime.now().weekday() + 1) % 7
-            bot.send_message(message.chat.id, str(dayweek), reply_markup=keyboard_days)
+            schedule = db_requests.get_schedule(str(message.from_user.id))
+            bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_days)
         elif message.text.lower() == 'полное расписание':
             bot.send_message(message.chat.id, 'all', reply_markup=keyboard_days)
 
@@ -90,16 +94,6 @@ def sticker_id(message):
 def levelback(id):
     pass
 
-
-def chek_group(group):   # после слиянии кода бота с бд функция будет другой
-    actual_groups = {'20': ['01', '02', '03', '04', '05', '06', '09', '10'], '19': ['01', '02', '03', '05', '09', '10'],
-                     '18': ['01', '02', '03', '09', '10'], '17': ['01', '02']}
-    if group.count('.б') != 1:
-        return False
-    year, number = group.split('.б')
-    if year in actual_groups.keys() and number in actual_groups[year]:
-        return True
-    return False
 
 level_id = '0'
 bot.polling()
