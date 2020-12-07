@@ -37,11 +37,14 @@ def send_text(message):
 
     elif level_id == '2_1':
         group = message.text.lower()
-        if True:    # проверка группы
+        if chek_group(group):    # проверка группы
             level_id = '0'
             bot.send_message(message.chat.id, 'correct', reply_markup=keyboard_start)
+            full_group = group.upper() + '-мкн'
+            print(message.from_user.id, group, full_group)
         else:
             bot.send_message(message.chat.id, 'Такой группы не существует')
+            bot.send_message(message.chat.id, 'Попробуйте ещё раз')
 
     elif level_id == '0':
         if message.text.lower() == 'привет':
@@ -87,6 +90,16 @@ def sticker_id(message):
 def levelback(id):
     pass
 
+
+def chek_group(group):   # после слиянии кода бота с бд функция будет другой
+    actual_groups = {'20': ['01', '02', '03', '04', '05', '06', '09', '10'], '19': ['01', '02', '03', '05', '09', '10'],
+                     '18': ['01', '02', '03', '09', '10'], '17': ['01', '02']}
+    if group.count('.б') != 1:
+        return False
+    year, number = group.split('.б')
+    if year in actual_groups.keys() and number in actual_groups[year]:
+        return True
+    return False
 
 level_id = '0'
 bot.polling()
