@@ -31,11 +31,19 @@ def choose_users_by_time(time):
     """
     connection = sqlite3.connect('users_data.db')
     db_cursor = connection.cursor()
-    group = db_cursor.execute('SELECT group_id FROM schedule WHERE ' + time + ' != ""').fetchall()
+    list_of_times = db_cursor.execute('PRAGMA table_info(schedule)').fetchall()
+    check = 0
+    for columns in list_of_times:
+        if time in columns:
+            check = 1
+    if check != 0:
+        group = db_cursor.execute('SELECT group_id FROM schedule WHERE ' + '"' + time + '"' + ' != ""').fetchall()
+    else:
+        group = []
     students_id = []
     for group_number in range(len(group)):
         one_group_id = db_cursor.execute('SELECT id FROM users WHERE group_number = ' +
-                          '"' + group[group_number][0] + '"').fetchall()
+                                         '"' + group[group_number][0] + '"').fetchall()
         for id_number in range(len(one_group_id)):
             students_id.append(one_group_id[id_number][0])
     connection.close()
