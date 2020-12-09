@@ -1,5 +1,6 @@
 import httplib2
 import apiclient
+import re
 from oauth2client.service_account import ServiceAccountCredentials
 
 
@@ -27,7 +28,11 @@ def find_changes(schedule_table):
     for row_number in range(len(schedule_table)):
         for column_number in range(len(schedule_table[row_number])):
             cell = schedule_table[row_number][column_number]
-            time_position = cell.find('с ')
+            time_position = re.search(r'с \w\w[-:]\w\w', cell)
+            if time_position != None:
+                time_position = time_position.span()[0]
+            else:
+                time_position = -1
             year = cell[time_position+8:time_position+12:1]
             if (time_position != -1) & (cell[time_position+8:time_position+12:1] != '2020'):
                 schedule_table[row_number][column_number] = ''
@@ -37,9 +42,6 @@ def find_changes(schedule_table):
                 new_row[column_number] = cell
                 schedule_table.insert(row_number, new_row)
     return schedule_table
-
-
-
 
 
 def clear_row(table):
