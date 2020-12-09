@@ -6,6 +6,42 @@ from oauth2client.service_account import ServiceAccountCredentials
 week = {"ПОНЕДЕЛЬНИК": 0, "ВТОРНИК": 1, "СРЕДА": 2, "ЧЕТВЕРГ": 3, "ПЯТНИЦА": 4, "СУББОТА": 5, "День": 'День'}
 
 
+def row_only_with_time(columns):
+    """Создает пустой лист длины columns
+
+    :param columns: длина листа
+    :return: лист с пустыми строками
+    """
+    row = []
+    for elements in range(columns):
+        row.append('')
+    return row
+
+
+def find_changes(schedule_table):
+    """Проверяет таблицу с расписанием на наличие
+
+    :param schedule_table: двумерный список с расписанием
+    :return: двумерный список с учетом времени в ячейках
+    """
+    for row_number in range(len(schedule_table)):
+        for column_number in range(len(schedule_table[row_number])):
+            cell = schedule_table[row_number][column_number]
+            time_position = cell.find('с ')
+            year = cell[time_position+8:time_position+12:1]
+            if (time_position != -1) & (cell[time_position+8:time_position+12:1] != '2020'):
+                schedule_table[row_number][column_number] = ''
+                time = cell[time_position+2:time_position+7:1]
+                new_row = row_only_with_time(8)
+                new_row[1] = time.replace('-', ':')
+                new_row[column_number] = cell
+                schedule_table.insert(row_number, new_row)
+    return schedule_table
+
+
+
+
+
 def clear_row(table):
     """Чистит лист от пустых элементов и убирает из ячеек переходы на новую строку
 
@@ -104,9 +140,11 @@ values = service.spreadsheets().values().get(
 
 values = clear_row(values)
 
-values['values'].pop(16)
+print(values['values'])
+print(find_changes(values['values']))
+#values['values'].pop(16)
 
-write_to_file('schedule_data.csv', values)
+write_to_file('schedule_data2.csv', values)
 exit()
 
 
