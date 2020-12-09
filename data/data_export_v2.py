@@ -19,28 +19,41 @@ def row_only_with_time(columns):
     return row
 
 
+def add_row_without_duplicate(schedule_table, row, column_n, day):
+    """
+
+    :param schedule_table:
+    :param row:
+    :return:
+    """
+    for row_number in range(len(schedule_table)):
+        if (row[1] in schedule_table[row_number]) & ():
+            schedule_table[row_number][column_n] = row[column_n]
+            return 1, schedule_table
+    return 0, schedule_table
+
+
 def find_changes(schedule_table):
-    """Проверяет таблицу с расписанием на наличие
+    """Проверяет таблицу с расписанием на наличие дополнительной информации о начале лекции
 
     :param schedule_table: двумерный список с расписанием
-    :return: двумерный список с учетом времени в ячейках
+    :return: двумерный список с учетом дополнительной информации
     """
     for row_number in range(len(schedule_table)):
         for column_number in range(len(schedule_table[row_number])):
             cell = schedule_table[row_number][column_number]
             time_position = re.search(r'с \w\w[-:]\w\w', cell)
             if time_position != None:
-                time_position = time_position.span()[0]
-            else:
-                time_position = -1
-            year = cell[time_position+8:time_position+12:1]
-            if (time_position != -1) & (cell[time_position+8:time_position+12:1] != '2020'):
-                schedule_table[row_number][column_number] = ''
-                time = cell[time_position+2:time_position+7:1]
+                time_position_start = time_position.span()[0]
+                time_position_end = time_position.span()[1]
+                time = cell[time_position_start+2:time_position_end:1]
                 new_row = row_only_with_time(8)
                 new_row[1] = time.replace('-', ':')
                 new_row[column_number] = cell
-                schedule_table.insert(row_number, new_row)
+                complete_check, schedule_table = add_row_without_duplicate(schedule_table, new_row, column_number)
+                schedule_table[row_number][column_number] = ''
+                if complete_check != 1:
+                    schedule_table.insert(row_number, new_row)
     return schedule_table
 
 
