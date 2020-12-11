@@ -152,15 +152,17 @@ service = apiclient.discovery.build('sheets', 'v4', http=httpAuth)
 # переписывание значений таблицы в лист
 values = service.spreadsheets().values().get(
     spreadsheetId=spreadsheet_id,
-    range='A1:H61',
+    range='A1:H59',
     majorDimension='ROWS'
 ).execute()
 
 values = clear_row(values)
 
+values['values'].pop(16)
+
 print(values['values'])
+
 print(find_changes(values['values']))
-#values['values'].pop(16)
 
 write_to_file('schedule_data2.csv', values)
 exit()
