@@ -19,7 +19,7 @@ def row_only_with_time(columns):
     return row
 
 
-def add_row_without_duplicate(schedule_table, row, column_n, day):
+def add_row_without_duplicate(schedule_table, row, column_n, row_n):
     """
 
     :param schedule_table:
@@ -27,7 +27,7 @@ def add_row_without_duplicate(schedule_table, row, column_n, day):
     :return:
     """
     for row_number in range(len(schedule_table)):
-        if (row[1] in schedule_table[row_number]) & ():
+        if (row[1] in schedule_table[row_number]) & (row_number >= row_n):
             schedule_table[row_number][column_n] = row[column_n]
             return 1, schedule_table
     return 0, schedule_table
@@ -39,7 +39,9 @@ def find_changes(schedule_table):
     :param schedule_table: двумерный список с расписанием
     :return: двумерный список с учетом дополнительной информации
     """
+    added_rows = 0
     for row_number in range(len(schedule_table)):
+        row_number += added_rows
         for column_number in range(len(schedule_table[row_number])):
             cell = schedule_table[row_number][column_number]
             time_position = re.search(r'с \w\w[-:]\w\w', cell)
@@ -50,10 +52,11 @@ def find_changes(schedule_table):
                 new_row = row_only_with_time(8)
                 new_row[1] = time.replace('-', ':')
                 new_row[column_number] = cell
-                complete_check, schedule_table = add_row_without_duplicate(schedule_table, new_row, column_number)
+                complete_check, schedule_table = add_row_without_duplicate(schedule_table, new_row, column_number, row_number)
                 schedule_table[row_number][column_number] = ''
                 if complete_check != 1:
-                    schedule_table.insert(row_number, new_row)
+                    schedule_table.insert(row_number + 1, new_row)
+                    added_rows += 1
     return schedule_table
 
 
