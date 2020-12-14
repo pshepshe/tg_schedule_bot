@@ -1,9 +1,91 @@
 import httplib2
 import apiclient
+import re
 from oauth2client.service_account import ServiceAccountCredentials
 
 
 week = {"ПОНЕДЕЛЬНИК": 0, "ВТОРНИК": 1, "СРЕДА": 2, "ЧЕТВЕРГ": 3, "ПЯТНИЦА": 4, "СУББОТА": 5, "День": 'День'}
+
+
+def row_only_with_time(columns):
+    """Создает пустой лист длины columns
+
+    :param columns: длина листа
+    :return: лист с пустыми строками
+    """
+    row = []
+    for elements in range(columns):
+        row.append('')
+    return row
+
+
+def add_row_without_duplicate(schedule_table, row, column_n, row_n):
+    """
+
+    :param schedule_table:
+    :param row:
+    :return:
+    """
+    for row_number in range(len(schedule_table)):
+        if (row[1] in schedule_table[row_number]) & (row_number >= row_n - 1):
+            schedule_table[row_number][column_n] = row[column_n]
+            return 1, schedule_table
+    return 0, schedule_table
+
+
+def time_of_lecture_end(time):
+    """Прибовляет к времени время одной пары и возвращает значение времени в формате string
+
+    :param time: время формата hh:mm
+    :return: время формата hh:mm
+    """
+    minute = int(time[4]) + 5
+    if minute >= 10:
+        time = time[:3] + str(int(time[3]) + 1) + '0'
+    else:
+        time = time[:4] + str(int(time[4]) + 5)
+    minute = int(time[3]) + 3
+    if minute >= 6:
+        time = time[:1] + str(int(time[1]) + 1) + ':' + str(int(time[3]) + 3 - 6) + time[4]
+    else:
+        time = time[:3] + str(minute) + time[4]
+    hour = int(time[1]) + 1
+    if hour >= 10:
+        time = str(int(time[0]) + 1) + '0' + time[2:]
+    else:
+        time = time[0] + str(int(time[1]) + 1) + time[2:]
+    return time
+
+
+
+
+def find_changes(schedule_table):
+    """Проверяет таблицу с расписанием на наличие дополнительной информации о начале лекции
+
+    :param schedule_table: двумерный список с расписанием
+    :return: двумерный список с учетом дополнительной информации
+    """
+    added_rows = 0
+    for row_number in range(len(schedule_table)):
+        row_number += added_rows
+        for column_number in range(len(schedule_table[row_number])):
+            cell = schedule_table[row_number][column_number]
+            time_position = re.search(r'с \w\w[-:]\w\w', cell)
+            if time_position != None:
+                time_position_start = time_position.span()[0]
+                time_position_end = time_position.span()[1]
+                time = cell[time_position_start+2:time_position_end:1]
+                new_row = row_only_with_time(8)
+                new_row[1] = time.replace('-', ':') + ' - ' + time_of_lecture_end(time).replace('-', ':')
+                #new_row[1] = new_row[1]
+                new_row[column_number] = cell
+                complete_check, schedule_table = add_row_without_duplicate(schedule_table, new_row, column_number, row_number)
+                schedule_table[row_number][column_number] = ''
+                if complete_check != 1:
+                    #new_row[1] = new_row[1] + ' - ' + time_of_lecture_end(time).replace('-', ':')
+                    schedule_table.insert(row_number + 1, new_row)
+                    added_rows += 1
+    return schedule_table
 
 
 def clear_row(table):
@@ -98,7 +180,7 @@ service = apiclient.discovery.build('sheets', 'v4', http=httpAuth)
 # переписывание значений таблицы в лист
 values = service.spreadsheets().values().get(
     spreadsheetId=spreadsheet_id,
-    range='A1:H61',
+    range='A1:H59',
     majorDimension='ROWS'
 ).execute()
 
@@ -106,7 +188,11 @@ values = clear_row(values)
 
 values['values'].pop(16)
 
-write_to_file('schedule_data.csv', values)
+print(values['values'])
+
+print(find_changes(values['values']))
+
+write_to_file('schedule_data2.csv', values)
 exit()
 
 
