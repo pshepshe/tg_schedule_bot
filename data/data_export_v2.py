@@ -27,10 +27,36 @@ def add_row_without_duplicate(schedule_table, row, column_n, row_n):
     :return:
     """
     for row_number in range(len(schedule_table)):
-        if (row[1] in schedule_table[row_number]) & (row_number >= row_n):
+        if (row[1] in schedule_table[row_number]) & (row_number >= row_n - 1):
             schedule_table[row_number][column_n] = row[column_n]
             return 1, schedule_table
     return 0, schedule_table
+
+
+def time_of_lecture_end(time):
+    """Прибовляет к времени время одной пары и возвращает значение времени в формате string
+
+    :param time: время формата hh:mm
+    :return: время формата hh:mm
+    """
+    minute = int(time[4]) + 5
+    if minute >= 10:
+        time = time[:3] + str(int(time[3]) + 1) + '0'
+    else:
+        time = time[:4] + str(int(time[4]) + 5)
+    minute = int(time[3]) + 3
+    if minute >= 6:
+        time = time[:1] + str(int(time[1]) + 1) + ':' + str(int(time[3]) + 3 - 6) + time[4]
+    else:
+        time = time[:3] + str(minute) + time[4]
+    hour = int(time[1]) + 1
+    if hour >= 10:
+        time = str(int(time[0]) + 1) + '0' + time[2:]
+    else:
+        time = time[0] + str(int(time[1]) + 1) + time[2:]
+    return time
+
+
 
 
 def find_changes(schedule_table):
@@ -50,11 +76,13 @@ def find_changes(schedule_table):
                 time_position_end = time_position.span()[1]
                 time = cell[time_position_start+2:time_position_end:1]
                 new_row = row_only_with_time(8)
-                new_row[1] = time.replace('-', ':')
+                new_row[1] = time.replace('-', ':') + ' - ' + time_of_lecture_end(time).replace('-', ':')
+                #new_row[1] = new_row[1]
                 new_row[column_number] = cell
                 complete_check, schedule_table = add_row_without_duplicate(schedule_table, new_row, column_number, row_number)
                 schedule_table[row_number][column_number] = ''
                 if complete_check != 1:
+                    #new_row[1] = new_row[1] + ' - ' + time_of_lecture_end(time).replace('-', ':')
                     schedule_table.insert(row_number + 1, new_row)
                     added_rows += 1
     return schedule_table
