@@ -14,15 +14,17 @@ def current_lecture(time_now, lectures):
     return lectures
 
 
-bot = telebot.TeleBot('place_token_here')
+bot = telebot.TeleBot('1475926428:AAHcGfNcx0VpOvPkiQt6_1EuRjajyMo86UY')
 
 
 while True:
-    users = db_requests.choose_users_by_time(db_requests.time_in_right_form())
+    now_time = db_requests.time_in_right_form()
+    time_with_delay = db_requests.time_plus_ten_minutes(db_requests.time_in_right_form())
+    users = db_requests.choose_users_by_time(time_with_delay)
     if users != []:
         for chat_id in users:
             schedule = db_requests.get_schedule(str(chat_id))
             schedule = schedule[datetime.datetime.today().weekday()]
-            bot.send_message(int(chat_id), current_lecture(db_requests.time_in_right_form(), schedule))
+            bot.send_message(int(chat_id), 'Через 10 минут начнется лекция\n' + current_lecture(db_requests.time_in_right_form(), schedule))
         time.sleep(60)
     time.sleep(2)

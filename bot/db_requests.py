@@ -4,7 +4,6 @@ import datetime
 
 def time_in_right_form():
     """ Вовращает текущее время в корректном формате
-
     :return: строка со временем
     """
     date = str(datetime.datetime.today().weekday())
@@ -22,9 +21,23 @@ def time_in_right_form():
     return time
 
 
+def time_plus_ten_minutes(time):
+    minute = int(time[4]) + 1
+    if minute >= 6:
+        time = time[:4] + '0' + time[5]
+        hour = int(time[2]) + 1
+    else:
+        time = time[:4] + str(minute) + time[5]
+        hour = int(time[2])
+    if hour >= 10:
+        time = time[0] + str(int(time[1]) + 1) + '0' + time[3:]
+    else:
+        time = time[:2] + str(hour) + time[3:]
+    return time
+
+
 def choose_users_by_time(time):
     """Возвращает массив с id пользователей, у которых пара начинается в указанное время
-
     :param time: время в корректном формате(строка вида номер дня недели + время). Пример: '009:30' - будет означать
     09:30 понедельника.
     :return: массив с id студентов
@@ -52,7 +65,6 @@ def choose_users_by_time(time):
 
 def add_user_to_table(user_id, group):
     """Добавляет id пользователя и его группу в базу данных
-
     :param user_id: id пользователя
     :param group: название группы
     :return: ничего
@@ -73,7 +85,6 @@ def add_user_to_table(user_id, group):
 def get_schedule(user_id):
     """ Выводит расписание в виде двумерного массива вида schedule[a], где a - принимает значения от 0 до 6 и каждая
     цифра, начиная с 0 означает день недели.
-
     :param user_id: id пользователя, который принимается в виде строки
     :return: лист с расписанием
     """
