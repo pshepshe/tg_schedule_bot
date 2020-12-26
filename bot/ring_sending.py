@@ -25,6 +25,12 @@ while True:
         for chat_id in users:
             schedule = db_requests.get_schedule(str(chat_id))
             schedule = schedule[datetime.datetime.today().weekday()]
-            bot.send_message(int(chat_id), 'Через 10 минут начнется лекция\n' + current_lecture(db_requests.time_in_right_form(), schedule))
+            lectures = current_lecture(db_requests.time_in_right_form(), schedule).split('\n')
+            if db_requests.get_user_subscribe_status(chat_id) == 1:
+                for lecture in lectures:
+                    kek = lecture[:5]
+                    if lecture[:5] == time_with_delay[1:]:
+                        bot.send_message(int(chat_id), 'Скоро начнется лекция\n' + lecture)
+                        print(lecture)
         time.sleep(60)
     time.sleep(2)
