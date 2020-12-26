@@ -78,14 +78,19 @@ def send_text(message):
 
     elif message.text.lower() == 'на сегодня':
         dayweek = datetime.datetime.now().weekday()
-        print(dayweek)
-        schedule = db_requests.get_schedule(str(message.from_user.id))
-        bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_days)
+        if dayweek == 6:
+            bot.send_message(message.chat.id, 'это выходной день', reply_markup=keyboard_days)
+        else:
+            schedule = db_requests.get_schedule(str(message.from_user.id))
+            bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_days)
 
     elif message.text.lower() == 'на завтра':
         dayweek = (datetime.datetime.now().weekday() + 1) % 7
-        schedule = db_requests.get_schedule(str(message.from_user.id))
-        bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_days, parse_mode='HTML')
+        if dayweek == 6:
+            bot.send_message(message.chat.id, 'это выходной день', reply_markup=keyboard_days)
+        else:
+            schedule = db_requests.get_schedule(str(message.from_user.id))
+            bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_days, parse_mode='HTML')
 
     elif message.text.lower() == 'зум каналы':
         bot.send_message(message.chat.id, 'Выберите зум канал', reply_markup=keyboard_zoom_channels)
@@ -93,11 +98,8 @@ def send_text(message):
     elif message.text.lower() in zoom:
         bot.send_message(message.chat.id, zoom[message.text], reply_markup=keyboard_main)
 
-
-
-
-    #else:
-    #    bot.send_message(message.chat.id, 'Такая команда не существует')
+    else:
+        bot.send_message(message.chat.id, 'Такая команда не существует')
 
 
 @bot.message_handler(content_types=['sticker'])
