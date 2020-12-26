@@ -4,11 +4,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime, timedelta
 
 groups_calendar = {'20.Б01-мкн': 'dcdq0k481p3ank5cg4nkjauti8@group.calendar.google.com',
-                   '20.Б02-мкн': '',
-                   '20.Б03-мкн': '',
-                   '20.Б04-мкн': '',
-                   '20.Б05-мкн': '',
-                   '20.Б06-мкн': ''}
+                   '20.Б02-мкн': '5mfumtkgj2oucp4i2iaovbhrmo@group.calendar.google.com',
+                   '20.Б03-мкн': 'i0sr0lhdmqr7g7tl6hq88cvsgk@group.calendar.google.com',
+                   '20.Б04-мкн': '360snk5f76avr6rc59hj8umf7o@group.calendar.google.com',
+                   '20.Б05-мкн': '7arbdnu68qijmqp7ah1da1l9so@group.calendar.google.com',
+                   '20.Б06-мкн': 'rdbffl2pdj147l6fj615kadlec@group.calendar.google.com'}
 # авторизация сервисного аккаунта
 CREDENTIALS_FILE = 'creds.json'
 calendar_ident = 'dcdq0k481p3ank5cg4nkjauti8@group.calendar.google.com'
@@ -48,7 +48,7 @@ with open('schedule_data2.csv', 'r') as schedule:
     while current_line != ['']:
         schedule_table.append(current_line)
         current_line = schedule.readline().split('|')
-events = service.events().list(calendarId='dcdq0k481p3ank5cg4nkjauti8@group.calendar.google.com').execute()
+
 for delta_day in range(7):
     day = str((int(datetime.today().weekday()) + delta_day) % 7)
     for time_line in schedule_table:
@@ -56,6 +56,8 @@ for delta_day in range(7):
             current_lecture = time_line[group_number + 2]
             check_event_existence = 0
             date = current_date + timedelta(days=delta_day)
+            current_group = groups[group_number + 2]
+            events = service.events().list(calendarId=groups_calendar[current_group]).execute()
             for current_event in events['items']:
                 kek1 = current_event['start']['dateTime'][:10]
                 kek2 = current_event['summary']
