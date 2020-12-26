@@ -2,6 +2,10 @@ import httplib2
 import apiclient
 import re
 from oauth2client.service_account import ServiceAccountCredentials
+from googleapiclient import errors
+from googleapiclient.discovery import build
+from httplib2 import Http
+from oauth2client import file as oauth_file, client, tools
 
 
 week = {"ПОНЕДЕЛЬНИК": 0, "ВТОРНИК": 1, "СРЕДА": 2, "ЧЕТВЕРГ": 3, "ПЯТНИЦА": 4, "СУББОТА": 5, "День": 'День'}
@@ -70,7 +74,7 @@ def find_changes(schedule_table):
         row_number += added_rows
         for column_number in range(len(schedule_table[row_number])):
             cell = schedule_table[row_number][column_number]
-            time_position = re.search(r'с \w\w[-:]\w\w', cell)
+            time_position = re.search(r'[св] \w\w[-:]\w\w', cell)
             if time_position != None:
                 time_position_start = time_position.span()[0]
                 time_position_end = time_position.span()[1]
@@ -168,33 +172,21 @@ def write_to_file(file_name, list_to_write):
     return 0
 
 
-# авторизация сервисного аккаунта
-CREDENTIALS_FILE = 'creds.json'
-spreadsheet_id = '1wk_ekeLOZF0ZFgX25tqLXSnQtFcFcXByXoo9KPX_zUo'
-credentials = ServiceAccountCredentials.from_json_keyfile_name(
-    CREDENTIALS_FILE,
-    ['https://www.googleapis.com/auth/spreadsheets',
-     'https://www.googleapis.com/auth/drive'])
-httpAuth = credentials.authorize(httplib2.Http())
-service = apiclient.discovery.build('sheets', 'v4', http=httpAuth)
-# переписывание значений таблицы в лист
-values = service.spreadsheets().values().get(
-    spreadsheetId=spreadsheet_id,
-    range='A1:H59',
-    majorDimension='ROWS'
-).execute()
+# авторизация
+SCOPES = ['https://www.googleapis.com/auth/script.projects',
+          'https://www.googleapis.com/auth/spreadsheets.currentonly',
+          'https://www.googleapis.com/auth/spreadsheets']
+store = oauth_file.Storage('token.json')
+creds = store.get()
+if not creds or creds.invalid:
+    flow = client.flow_from_clientsecrets('credenti.json', SCOPES)
+    creds = tools.run_flow(flow, store)
+service = build('script', 'v1', credentials=creds)
 
-values = clear_row(values)
+script_id = '12PnuBrX1CIKwIjJyyoe-UWh0Fyo7roJW-or0jQEx0NeCJaIvbaeGUgcA'
 
-values['values'].pop(16)
-
-print(values['values'])
-
-print(find_changes(values['values']))
-
-write_to_file('schedule_data2.csv', values)
-exit()
-
-
+request = {"function": "create_table"}
+response = service.scripts().run(body=request, scriptId=script_id).execute()
+print(response)
 
 
