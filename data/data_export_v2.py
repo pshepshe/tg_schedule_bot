@@ -1,10 +1,5 @@
-import httplib2
-import apiclient
 import re
-from oauth2client.service_account import ServiceAccountCredentials
-from googleapiclient import errors
 from googleapiclient.discovery import build
-from httplib2 import Http
 from oauth2client import file as oauth_file, client, tools
 
 
@@ -99,10 +94,10 @@ def clear_row(table):
     :return: отформатированный лист
     """
     # удаление пустых листов
-    for counter in range(table['values'].count([])):
-        table['values'].remove([])
+    for counter in range(table.count([])):
+        table.remove([])
     # приведение содержмого ячеек в строку без перехода на новую
-    for row in table['values']:
+    for row in table:
         for pos in range(len(row)):
             row[pos] = row[pos].replace('\n', ' ')
     return table
@@ -186,7 +181,11 @@ service = build('script', 'v1', credentials=creds)
 script_id = '12PnuBrX1CIKwIjJyyoe-UWh0Fyo7roJW-or0jQEx0NeCJaIvbaeGUgcA'
 
 request = {"function": "create_table"}
+
 response = service.scripts().run(body=request, scriptId=script_id).execute()
-print(response)
+schedule = response['response']['result']
+print(schedule)
+print(clear_row(schedule))
+print(find_changes(schedule))
 
 
