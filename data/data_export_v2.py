@@ -56,8 +56,6 @@ def time_of_lecture_end(time):
     return time
 
 
-
-
 def find_changes(schedule_table):
     """Проверяет таблицу с расписанием на наличие дополнительной информации о начале лекции
 
@@ -74,7 +72,7 @@ def find_changes(schedule_table):
                 time_position_start = time_position.span()[0]
                 time_position_end = time_position.span()[1]
                 time = cell[time_position_start+2:time_position_end:1]
-                new_row = row_only_with_time(8)
+                new_row = row_only_with_time(21)
                 new_row[1] = time.replace('-', ':') + ' - ' + time_of_lecture_end(time).replace('-', ':')
                 #new_row[1] = new_row[1]
                 new_row[column_number] = cell
@@ -100,24 +98,31 @@ def clear_row(table):
     for row in table:
         for pos in range(len(row)):
             row[pos] = row[pos].replace('\n', ' ')
+    for row in table:
+        if row[1] == '':
+            table.remove(row)
     return table
 
 
-def write_row(row, settings, file):
+def get_false_positions(table):
+    false_positions = []
+    for current_position in range(len(table[0])):
+        if (table[0][current_position] == 'День') or (table[0][current_position] == 'Время') and (current_position > 1):
+            false_positions.append(current_position)
+    return false_positions
+
+
+def write_row(row, file, false_columns):
     """Записывает строку таблицы в файл на основании количества объединенных ячеек, стоящих подряд
 
     :param file: дескриптор файла, в который производится запись
     :param row: строка таблицы
-    :param settings: параметры записи в виде листа, который содержит количество объединенных ячеек
     :return: ничего
     """
-    position = 0
-    for number_of_merged_cells in settings:
-        position += 1
-        for counter in range(number_of_merged_cells):
+    for lecture_number in range(len(row) - 1):
+        if not (lecture_number + 1 in false_columns):
             file.write('|')
-            if position < len(row):
-                file.write(row[position])
+            file.write(row[lecture_number + 1])
 
 
 def row_type(row, number_of_groups):
@@ -154,15 +159,16 @@ def write_to_file(file_name, list_to_write):
     :param list_to_write: лист, который небходимо переписать
     :return: ничего
     """
+    false_columns = get_false_positions(list_to_write)
     with open(file_name, 'w') as table:
-        day = list_to_write['values'][0][0]
-        for row in list_to_write['values']:
+        day = list_to_write[0][0]
+        for row in list_to_write:
             if row[0] == '':
                 table.write(str(week[day]))
             else:
                 day = row[0]
                 table.write(str(week[day]))
-            write_row(row, row_type(row, 6), table)
+            write_row(row, table, false_columns)
             table.write('\n')
     return 0
 
@@ -187,5 +193,6 @@ schedule = response['response']['result']
 print(schedule)
 print(clear_row(schedule))
 print(find_changes(schedule))
+write_to_file('schedule_data2.csv', schedule)
 
 
