@@ -1,17 +1,16 @@
-import httplib2
-import apiclient
 import re
-from oauth2client.service_account import ServiceAccountCredentials
+from googleapiclient.discovery import build
+from oauth2client import file as oauth_file, client, tools
 
 
 week = {"ПОНЕДЕЛЬНИК": 0, "ВТОРНИК": 1, "СРЕДА": 2, "ЧЕТВЕРГ": 3, "ПЯТНИЦА": 4, "СУББОТА": 5, "День": 'День'}
 
 
 def row_only_with_time(columns):
-    """Создает пустой лист длины columns
+    """Создает пустой список длины columns
 
-    :param columns: длина листа
-    :return: лист с пустыми строками
+    :param columns: длина списка
+    :return: список с пустыми строками
     """
     row = []
     for elements in range(columns):
@@ -20,11 +19,14 @@ def row_only_with_time(columns):
 
 
 def add_row_without_duplicate(schedule_table, row, column_n, row_n):
-    """
+    """ Вставляет в список с расписанием лекцию, исходя из игформации о ее времени начала
 
-    :param schedule_table:
-    :param row:
-    :return:
+    :param schedule_table: список с расписанием
+    :param row: ряд, в котором содержится информация о расписании и самой лекции
+    :param column_n: номер колонки с лекцией
+    :param row_n: номер ряда, на котором находится функция записи расписания в файл
+    :return: два значения, где первое говорит произошла ли операция добавления, а вотрое - это имененный список с
+    расписанием
     """
     for row_number in range(len(schedule_table)):
         if (row[1] in schedule_table[row_number]) & (row_number >= row_n - 1):
@@ -57,25 +59,24 @@ def time_of_lecture_end(time):
     return time
 
 
-
-
-def find_changes(schedule_table):
-    """Проверяет таблицу с расписанием на наличие дополнительной информации о начале лекции
+def lectures_right_time(schedule_table):
+    """Проверяет таблицу с расписанием на наличие дополнительной информации о начале лекции и редактирует спсиок с
+    с расписанием на основе этой информации
 
     :param schedule_table: двумерный список с расписанием
-    :return: двумерный список с учетом дополнительной информации
+    :return: двумерный список с учетом дополнительной информации о начале лекций
     """
     added_rows = 0
     for row_number in range(len(schedule_table)):
         row_number += added_rows
         for column_number in range(len(schedule_table[row_number])):
             cell = schedule_table[row_number][column_number]
-            time_position = re.search(r'с \w\w[-:]\w\w', cell)
+            time_position = re.search(r'[св] \w\w[-:]\w\w', cell)
             if time_position != None:
                 time_position_start = time_position.span()[0]
                 time_position_end = time_position.span()[1]
                 time = cell[time_position_start+2:time_position_end:1]
-                new_row = row_only_with_time(8)
+                new_row = row_only_with_time(21)
                 new_row[1] = time.replace('-', ':') + ' - ' + time_of_lecture_end(time).replace('-', ':')
                 #new_row[1] = new_row[1]
                 new_row[column_number] = cell
@@ -88,64 +89,51 @@ def find_changes(schedule_table):
     return schedule_table
 
 
-def clear_row(table):
-    """Чистит лист от пустых элементов и убирает из ячеек переходы на новую строку
+def clear_schedule(table):
+    """Чистит список с расписанием от пустых элементов и убирает из ячеек переходы на новую строку
 
     :param table: входной лист
     :return: отформатированный лист
     """
     # удаление пустых листов
-    for counter in range(table['values'].count([])):
-        table['values'].remove([])
+    for counter in range(table.count([])):
+        table.remove([])
     # приведение содержмого ячеек в строку без перехода на новую
-    for row in table['values']:
+    for row in table:
         for pos in range(len(row)):
-            row[pos] = row[pos].replace('\n', ' ')
+            row[pos] = row[pos].replace('\n', ' ').replace('\r', ' ')
+    for row in table:
+        if row[1] == '':
+            table.remove(row)
     return table
 
 
-def write_row(row, settings, file):
+def get_false_positions(table):
+    """ Возвращает массив с номерами колонок, которые не нужно записывать
+
+    :param table: список с расписанием
+    :return: массив номеров колонок, которые не нкжно записывать
+    """
+    false_positions = []
+    for current_position in range(len(table[0])):
+        if ((table[0][current_position] == 'День') or (table[0][current_position] == 'Время')) and (current_position > 1):
+            false_positions.append(current_position)
+    return false_positions
+
+
+def write_row(row, file, false_columns):
     """Записывает строку таблицы в файл на основании количества объединенных ячеек, стоящих подряд
 
     :param file: дескриптор файла, в который производится запись
     :param row: строка таблицы
-    :param settings: параметры записи в виде листа, который содержит количество объединенных ячеек
     :return: ничего
     """
-    position = 0
-    for number_of_merged_cells in settings:
-        position += 1
-        for counter in range(number_of_merged_cells):
-            file.write('|')
-            if position < len(row):
-                file.write(row[position])
-
-
-def row_type(row, number_of_groups):
-    """ Принимает строку таблицы и возвращает лист, в котором последовательно содержится количество объединенных ячеек
-
-    :param number_of_groups: количество групп, для которых имеется предмет в row
-    :param row: строка таблицы, в виде лист
-    :return: лист с настройками для записи
-    """
-    setting_list = []
-    for counter in range(number_of_groups + 1):                 # дефолтная строка на основании длины строки
-        setting_list.append(1)
-    if len(row) == 3:
-        setting_list = [1, number_of_groups]
-        return setting_list
-    if len(row) > 3:
-        if row[2].find('Иcтория') != -1:                        # обнаружение истории пераого курса
-            setting_list = [1, 4, 2]
-            return setting_list
-        if row[len(row)-1].find('объектно') != -1:              # обнаружение лекций ООП первого курса
-            setting_list = [1, 1, 1, 1, 1, 2]
-            return setting_list
+    for lecture_number in range(len(row) - 1):
+        if (lecture_number + 1) in false_columns:
+            print('bb')
         else:
-            return setting_list
-
-    else:
-        return setting_list
+            file.write('|')
+            file.write(row[lecture_number + 1])
 
 
 def write_to_file(file_name, list_to_write):
@@ -155,46 +143,40 @@ def write_to_file(file_name, list_to_write):
     :param list_to_write: лист, который небходимо переписать
     :return: ничего
     """
+    false_columns = get_false_positions(list_to_write)
     with open(file_name, 'w') as table:
-        day = list_to_write['values'][0][0]
-        for row in list_to_write['values']:
+        day = list_to_write[0][0]
+        for row in list_to_write:
             if row[0] == '':
                 table.write(str(week[day]))
             else:
                 day = row[0]
                 table.write(str(week[day]))
-            write_row(row, row_type(row, 6), table)
+            write_row(row, table, false_columns)
             table.write('\n')
     return 0
 
 
-# авторизация сервисного аккаунта
-CREDENTIALS_FILE = 'creds.json'
-spreadsheet_id = '1wk_ekeLOZF0ZFgX25tqLXSnQtFcFcXByXoo9KPX_zUo'
-credentials = ServiceAccountCredentials.from_json_keyfile_name(
-    CREDENTIALS_FILE,
-    ['https://www.googleapis.com/auth/spreadsheets',
-     'https://www.googleapis.com/auth/drive'])
-httpAuth = credentials.authorize(httplib2.Http())
-service = apiclient.discovery.build('sheets', 'v4', http=httpAuth)
-# переписывание значений таблицы в лист
-values = service.spreadsheets().values().get(
-    spreadsheetId=spreadsheet_id,
-    range='A1:H59',
-    majorDimension='ROWS'
-).execute()
+# авторизация
+SCOPES = ['https://www.googleapis.com/auth/script.projects',
+          'https://www.googleapis.com/auth/spreadsheets.currentonly',
+          'https://www.googleapis.com/auth/spreadsheets']
+store = oauth_file.Storage('token.json')
+creds = store.get()
+if not creds or creds.invalid:
+    flow = client.flow_from_clientsecrets('credenti.json', SCOPES)
+    creds = tools.run_flow(flow, store)
+service = build('script', 'v1', credentials=creds)
 
-values = clear_row(values)
+script_id = '12PnuBrX1CIKwIjJyyoe-UWh0Fyo7roJW-or0jQEx0NeCJaIvbaeGUgcA'
 
-values['values'].pop(16)
+request = {"function": "create_table"}
 
-print(values['values'])
-
-print(find_changes(values['values']))
-
-write_to_file('schedule_data2.csv', values)
-exit()
-
-
+response = service.scripts().run(body=request, scriptId=script_id).execute()
+schedule = response['response']['result']
+print(schedule)
+print(clear_schedule(schedule))
+print(lectures_right_time(schedule))
+write_to_file('schedule_data2.csv', schedule)
 
 
