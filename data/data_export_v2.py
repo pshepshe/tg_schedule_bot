@@ -7,10 +7,10 @@ week = {"ПОНЕДЕЛЬНИК": 0, "ВТОРНИК": 1, "СРЕДА": 2, "ЧЕ
 
 
 def row_only_with_time(columns):
-    """Создает пустой лист длины columns
+    """Создает пустой список длины columns
 
-    :param columns: длина листа
-    :return: лист с пустыми строками
+    :param columns: длина списка
+    :return: список с пустыми строками
     """
     row = []
     for elements in range(columns):
@@ -19,11 +19,14 @@ def row_only_with_time(columns):
 
 
 def add_row_without_duplicate(schedule_table, row, column_n, row_n):
-    """
+    """ Вставляет в список с расписанием лекцию, исходя из игформации о ее времени начала
 
-    :param schedule_table:
-    :param row:
-    :return:
+    :param schedule_table: список с расписанием
+    :param row: ряд, в котором содержится информация о расписании и самой лекции
+    :param column_n: номер колонки с лекцией
+    :param row_n: номер ряда, на котором находится функция записи расписания в файл
+    :return: два значения, где первое говорит произошла ли операция добавления, а вотрое - это имененный список с
+    расписанием
     """
     for row_number in range(len(schedule_table)):
         if (row[1] in schedule_table[row_number]) & (row_number >= row_n - 1):
@@ -56,11 +59,12 @@ def time_of_lecture_end(time):
     return time
 
 
-def find_changes(schedule_table):
-    """Проверяет таблицу с расписанием на наличие дополнительной информации о начале лекции
+def lectures_right_time(schedule_table):
+    """Проверяет таблицу с расписанием на наличие дополнительной информации о начале лекции и редактирует спсиок с
+    с расписанием на основе этой информации
 
     :param schedule_table: двумерный список с расписанием
-    :return: двумерный список с учетом дополнительной информации
+    :return: двумерный список с учетом дополнительной информации о начале лекций
     """
     added_rows = 0
     for row_number in range(len(schedule_table)):
@@ -85,8 +89,8 @@ def find_changes(schedule_table):
     return schedule_table
 
 
-def clear_row(table):
-    """Чистит лист от пустых элементов и убирает из ячеек переходы на новую строку
+def clear_schedule(table):
+    """Чистит список с расписанием от пустых элементов и убирает из ячеек переходы на новую строку
 
     :param table: входной лист
     :return: отформатированный лист
@@ -97,7 +101,7 @@ def clear_row(table):
     # приведение содержмого ячеек в строку без перехода на новую
     for row in table:
         for pos in range(len(row)):
-            row[pos] = row[pos].replace('\n', ' ')
+            row[pos] = row[pos].replace('\n', ' ').replace('\r', ' ')
     for row in table:
         if row[1] == '':
             table.remove(row)
@@ -105,9 +109,14 @@ def clear_row(table):
 
 
 def get_false_positions(table):
+    """ Возвращает массив с номерами колонок, которые не нужно записывать
+
+    :param table: список с расписанием
+    :return: массив номеров колонок, которые не нкжно записывать
+    """
     false_positions = []
     for current_position in range(len(table[0])):
-        if (table[0][current_position] == 'День') or (table[0][current_position] == 'Время') and (current_position > 1):
+        if ((table[0][current_position] == 'День') or (table[0][current_position] == 'Время')) and (current_position > 1):
             false_positions.append(current_position)
     return false_positions
 
@@ -120,36 +129,11 @@ def write_row(row, file, false_columns):
     :return: ничего
     """
     for lecture_number in range(len(row) - 1):
-        if not (lecture_number + 1 in false_columns):
+        if (lecture_number + 1) in false_columns:
+            print('bb')
+        else:
             file.write('|')
             file.write(row[lecture_number + 1])
-
-
-def row_type(row, number_of_groups):
-    """ Принимает строку таблицы и возвращает лист, в котором последовательно содержится количество объединенных ячеек
-
-    :param number_of_groups: количество групп, для которых имеется предмет в row
-    :param row: строка таблицы, в виде лист
-    :return: лист с настройками для записи
-    """
-    setting_list = []
-    for counter in range(number_of_groups + 1):                 # дефолтная строка на основании длины строки
-        setting_list.append(1)
-    if len(row) == 3:
-        setting_list = [1, number_of_groups]
-        return setting_list
-    if len(row) > 3:
-        if row[2].find('Иcтория') != -1:                        # обнаружение истории пераого курса
-            setting_list = [1, 4, 2]
-            return setting_list
-        if row[len(row)-1].find('объектно') != -1:              # обнаружение лекций ООП первого курса
-            setting_list = [1, 1, 1, 1, 1, 2]
-            return setting_list
-        else:
-            return setting_list
-
-    else:
-        return setting_list
 
 
 def write_to_file(file_name, list_to_write):
@@ -191,8 +175,8 @@ request = {"function": "create_table"}
 response = service.scripts().run(body=request, scriptId=script_id).execute()
 schedule = response['response']['result']
 print(schedule)
-print(clear_row(schedule))
-print(find_changes(schedule))
+print(clear_schedule(schedule))
+print(lectures_right_time(schedule))
 write_to_file('schedule_data2.csv', schedule)
 
 
