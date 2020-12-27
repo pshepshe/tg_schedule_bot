@@ -1,25 +1,65 @@
 import sqlite3
 import datetime
+import sqlalchemy
+from os import path
+
+
+working_directory = path.abspath('bot.py').replace('bot\\bot.py', 'data\\users_data.db')
+print(working_directory)
 
 
 def time_in_right_form():
     """ Вовращает текущее время в корректном формате
     :return: строка со временем
     """
-    date = str(datetime.datetime.today().weekday())
-    time = date
-    date = str(datetime.datetime.today().hour)
-    if len(date) < 2:
-        time = time + '0' + date + ':'
-    else:
-        time = time + date + ':'
-    date = str(datetime.datetime.today().minute)
-    if len(date) < 2:
-        time = time + '0' + date
-    else:
-        time = time + date
+    day = str(datetime.datetime.today().weekday())
+    time = day + str(datetime.datetime.today())[11:16]
     return time
 
+
+def sub_create():
+    '''Устанавливает статус подписки 0 для пользователя; здесь и далее:
+    1 -- пользователь подписан на рассылку
+    0 -- пользователь не подписан на рассылку'''
+
+    connection = sqlite3.connect(working_directory)
+    db_cursor = connection.cursor()
+    db_cursor.execute('''UPDATE users SET subscribe_status = 0 WHERE subscribe_status != 0''')
+    connection.commit()
+    connection.close()
+
+
+def subscribe(user_id):
+    '''Подписывает пользователя на рассылку'''
+    connection = sqlite3.connect(working_directory)
+    db_cursor = connection.cursor()
+    db_cursor.execute('''UPDATE users SET subscribe_status = 1 WHERE id = ''' + '"' + user_id + '"')
+    connection.commit()
+    connection.close()
+
+
+def unsubscribe(user_id):
+    """Отписывает пользователя от рассылки"""
+    connection = sqlite3.connect(working_directory)
+    db_cursor = connection.cursor()
+    db_cursor.execute('''UPDATE users SET subscribe_status = 0 WHERE id = ''' + '"' + user_id + '"')
+    connection.commit()
+    connection.close()
+
+
+def all_subscribed_users(user_id):
+    '''Казалось бы, достает всех подписанных пользователей, но на деле -- делает, что хочет'''
+    connection = sqlite3.connect('working_directory')
+    db_cursor = connection.cursor()
+    db_cursor.execute('''SELECT subscribe_status FROM users WERE subscribe_status = 1''')
+    subscribed_users = db_cursor.fetchall()
+
+
+def get_user_subscribe_status(user_id):
+    connection = sqlite3.connect(working_directory)
+    db_cursor = connection.cursor()
+    subscribe_status = db_cursor.execute('SELECT subscribe_status FROM users WHERE id = ' + user_id).fetchone()
+    return subscribe_status[0]
 
 def time_plus_ten_minutes(time):
     minute = int(time[4]) + 1
@@ -42,7 +82,7 @@ def choose_users_by_time(time):
     09:30 понедельника.
     :return: массив с id студентов
     """
-    connection = sqlite3.connect('users_data.db')
+    connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
     list_of_times = db_cursor.execute('PRAGMA table_info(schedule)').fetchall()
     check = 0
@@ -69,11 +109,12 @@ def add_user_to_table(user_id, group):
     :param group: название группы
     :return: ничего
     """
-    connection = sqlite3.connect('users_data.db')
+    connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
     note = [user_id, group]
     try:
         db_cursor.execute('INSERT INTO users(id, group_number) VALUES (?, ?)', note)
+        subscribe(user_id)
     except:
         db_cursor.execute('UPDATE users SET group_number =' + '"' + group + '"' +
                           'WHERE id = ' + str(user_id))
@@ -89,7 +130,7 @@ def get_schedule(user_id):
     :return: лист с расписанием
     """
     # массив с информацией о стобцах
-    connection = sqlite3.connect('users_data.db')
+    connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
     group = db_cursor.execute('SELECT group_number FROM users WHERE id =' + user_id).fetchall()
     group = '"' + group[0][0] + '"'
@@ -110,3 +151,16 @@ def get_schedule(user_id):
                 break
     connection.close()
     return schedule
+
+
+def get_users_group(user_id):
+    """
+
+    :param user_id:
+    :return:
+    """
+    connection = sqlite3.connect(working_directory)
+    db_cursor = connection.cursor()
+    group = db_cursor.execute('SELECT group_number FROM users WHERE id =' + user_id).fetchone()
+    connection.close()
+    return group
