@@ -156,26 +156,15 @@ def get_schedule(user_id):
 
 
 def get_users_group(user_id):
-    """
+    """ Возвращает группу пользователя или 0, если она не выбрана
 
-    :param user_id:
-    :return:
-    """
-    connection = sqlite3.connect(working_directory)
-    db_cursor = connection.cursor()
-    group = db_cursor.execute('SELECT group_number FROM users WHERE id =' + user_id).fetchone()
-    connection.close()
-    return group
-
-
-def get_users_group(user_id):
-    """
-
-    :param user_id:
-    :return:
+    :param user_id: id пользователя
+    :return: группу пользователя или 0, если она не выбрана
     """
     connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
     group = db_cursor.execute('SELECT group_number FROM users WHERE id =' + user_id).fetchone()
     connection.close()
+    if group == []:
+        return 0
     return group
