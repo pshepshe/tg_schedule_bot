@@ -8,17 +8,25 @@ bot = telebot.TeleBot('1475926428:AAHcGfNcx0VpOvPkiQt6_1EuRjajyMo86UY')
 day_of_week = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
 groups = ['20.Б01-мкн', '20.Б02-мкн', '20.Б03-мкн', '20.Б04-мкн', '20.Б05-мкн', '20.Б06-мкн']
 all_groups = []
+notifications_status = 'выкл'
+notifications = {1: 'вкл', 0: 'выкл'}
 zoom = {'101': 'https://us02web.zoom.us/j/384956974', '102': 'https://us02web.zoom.us/j/958115833',
         '103': 'https://us02web.zoom.us/j/212767337', '104': 'https://us02web.zoom.us/j/993690805',
         '201': 'https://us02web.zoom.us/j/812916426', '202': 'https://us02web.zoom.us/j/933271498',
         '203': 'https://us02web.zoom.us/j/811738408', '301': 'https://us02web.zoom.us/j/511327649',
         '302': 'https://us02web.zoom.us/j/675315555', '303': 'https://us02web.zoom.us/j/94638145805',
         '304': 'https://us02web.zoom.us/j/91097279226'}
+groups_calendar = {'20.Б01-мкн': 'https://calendar.google.com/calendar/u/0?cid=ZGNkcTBrNDgxcDNhbms1Y2c0bmtqYXV0aThAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ',
+                   '20.Б02-мкн': 'https://calendar.google.com/calendar/u/0?cid=NW1mdW10a2dqMm91Y3A0aTJpYW92YmhybW9AZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ',
+                   '20.Б03-мкн': 'https://calendar.google.com/calendar/u/0?cid=aTBzcjBsaGRtcXI3Zzd0bDZocTg4Y3ZzZ2tAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ',
+                   '20.Б04-мкн': 'https://calendar.google.com/calendar/u/0?cid=MzYwc25rNWY3NmF2cjZyYzU5aGo4dW1mN29AZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ',
+                   '20.Б05-мкн': 'https://calendar.google.com/calendar/u/0?cid=N2FyYmRudTY4cWlqbXFwN2FoMWRhMWw5c29AZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ',
+                   '20.Б06-мкн': 'https://calendar.google.com/calendar/u/0?cid=cmRiZmZsMnBkajE0N2w2Zmo2MTVrYWRsZWNAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ'}
 
 keyboard_main = telebot.types.ReplyKeyboardMarkup()
 keyboard_main.row('Расписание')
-keyboard_main.row('Зум каналы')
-keyboard_main.row('Выбор группы')
+keyboard_main.row('Зум каналы', 'Получить календарь')
+keyboard_main.row('Выбор группы', 'Изменить статус уведомлений')
 
 keyboard_start = telebot.types.ReplyKeyboardMarkup()
 keyboard_start.row('20.Б01-мкн', '20.Б02-мкн', '20.Б03-мкн')
@@ -74,15 +82,21 @@ def send_text(message):
     if message.text.lower() in day_of_week:
         day_number = day_of_week.index(message.text.lower())
         schedule = db_requests.get_schedule(str(message.from_user.id))
-        bot.send_message(message.chat.id, schedule[day_number], reply_markup=keyboard_days, parse_mode='HTML')
+        if schedule == 0:
+            bot.send_message(message.chat.id, 'Вы не выбрали группу', reply_markup=keyboard_main)
+        else:
+            bot.send_message(message.chat.id, schedule[day_number], reply_markup=keyboard_main)
 
     elif message.text.lower() == 'на сегодня':
         dayweek = datetime.datetime.now().weekday()
         if dayweek == 6:
-            bot.send_message(message.chat.id, 'это выходной день', reply_markup=keyboard_days)
+            bot.send_message(message.chat.id, 'это выходной день', reply_markup=keyboard_main)
         else:
             schedule = db_requests.get_schedule(str(message.from_user.id))
-            bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_days)
+            if schedule == 0:
+                bot.send_message(message.chat.id, 'Вы не выбрали группу', reply_markup=keyboard_main)
+            else:
+                bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_main)
 
     elif message.text.lower() == 'на завтра':
         dayweek = (datetime.datetime.now().weekday() + 1) % 7
@@ -90,7 +104,10 @@ def send_text(message):
             bot.send_message(message.chat.id, 'это выходной день', reply_markup=keyboard_days)
         else:
             schedule = db_requests.get_schedule(str(message.from_user.id))
-            bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_days, parse_mode='HTML')
+            if schedule == 0:
+                bot.send_message(message.chat.id, 'Вы не выбрали группу', reply_markup=keyboard_main)
+            else:
+                bot.send_message(message.chat.id, schedule[dayweek], reply_markup=keyboard_main)
 
     elif message.text.lower() == 'зум каналы':
         bot.send_message(message.chat.id, 'Выберите зум канал', reply_markup=keyboard_zoom_channels)
@@ -98,8 +115,21 @@ def send_text(message):
     elif message.text.lower() in zoom:
         bot.send_message(message.chat.id, zoom[message.text], reply_markup=keyboard_main)
 
-    else:
-        bot.send_message(message.chat.id, 'Такая команда не существует')
+    elif message.text.lower() == 'получить календарь':
+        user_group = db_requests.get_users_group(str(message.from_user.id))[0]
+        if user_group == 0:
+            bot.send_message(message.chat.id, 'Вы не выбрали группу', reply_markup=keyboard_main)
+        else:
+            bot.send_message(message.chat.id, groups_calendar[user_group], reply_markup=keyboard_main)
+
+    elif message.text.lower() == 'изменить статус уведомлений':
+        status = db_requests.get_user_subscribe_status(str(message.from_user.id))
+        if status == 1:
+            bot.send_message(message.chat.id, 'Уведомления: отключены')
+            db_requests.unsubscribe(str(message.from_user.id))
+        else:
+            bot.send_message(message.chat.id, 'Уведомления: включены')
+            db_requests.subscribe(str(message.from_user.id))
 
 
 @bot.message_handler(content_types=['sticker'])
