@@ -75,7 +75,6 @@ def time_plus_ten_minutes(time):
         time = time[:2] + str(hour) + time[3:]
     return time
 
-
 def choose_users_by_time(time):
     """Возвращает массив с id пользователей, у которых пара начинается в указанное время
     :param time: время в корректном формате(строка вида номер дня недели + время). Пример: '009:30' - будет означать
@@ -165,6 +164,6 @@ def get_users_group(user_id):
     db_cursor = connection.cursor()
     group = db_cursor.execute('SELECT group_number FROM users WHERE id =' + user_id).fetchone()
     connection.close()
-    if group == []:
-        return 0
+    if group == None:
+        return [0]
     return group
