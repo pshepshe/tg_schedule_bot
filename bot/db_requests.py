@@ -3,7 +3,7 @@ import datetime
 from os import path
 
 
-working_directory = path.abspath('bot.py').replace('bot\\bot.py', 'data\\users_data2.db')
+working_directory = path.abspath('bot.py').replace('bot\\bot.py', 'data\\users_data.db')
 print(working_directory)
 
 
