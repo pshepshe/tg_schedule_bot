@@ -127,12 +127,14 @@ def get_schedule(user_id):
     """ Выводит расписание в виде двумерного массива вида schedule[a], где a - принимает значения от 0 до 6 и каждая
     цифра, начиная с 0 означает день недели.
     :param user_id: id пользователя, который принимается в виде строки
-    :return: лист с расписанием
+    :return: список с расписанием или 0, если у пользователя не выбрана группа
     """
     # массив с информацией о стобцах
     connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
     group = db_cursor.execute('SELECT group_number FROM users WHERE id =' + user_id).fetchall()
+    if group == []:
+        return 0
     group = '"' + group[0][0] + '"'
     list_of_time = db_cursor.execute('PRAGMA table_info(schedule)').fetchall()
     counter_of_lectures = 1
@@ -151,6 +153,19 @@ def get_schedule(user_id):
                 break
     connection.close()
     return schedule
+
+
+def get_users_group(user_id):
+    """
+
+    :param user_id:
+    :return:
+    """
+    connection = sqlite3.connect(working_directory)
+    db_cursor = connection.cursor()
+    group = db_cursor.execute('SELECT group_number FROM users WHERE id =' + user_id).fetchone()
+    connection.close()
+    return group
 
 
 def get_users_group(user_id):
