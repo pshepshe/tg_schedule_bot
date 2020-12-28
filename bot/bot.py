@@ -3,19 +3,19 @@ import datetime
 import db_requests
 
 
-bot = telebot.TeleBot('1475926428:AAHcGfNcx0VpOvPkiQt6_1EuRjajyMo86UY')
+bot = telebot.TeleBot('1354814437:AAFh9fX9O1NT1RzUwvC0YhZcaEMT52HcqRs')
 
 day_of_week = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
 groups = ['20.Б01-мкн', '20.Б02-мкн', '20.Б03-мкн', '20.Б04-мкн', '20.Б05-мкн', '20.Б06-мкн']
 all_groups = []
 notifications_status = 'выкл'
 notifications = {1: 'вкл', 0: 'выкл'}
-zoom = {'101': 'https://us02web.zoom.us/j/384956974', '102': 'https://us02web.zoom.us/j/958115833',
-        '103': 'https://us02web.zoom.us/j/212767337', '104': 'https://us02web.zoom.us/j/993690805',
-        '201': 'https://us02web.zoom.us/j/812916426', '202': 'https://us02web.zoom.us/j/933271498',
-        '203': 'https://us02web.zoom.us/j/811738408', '301': 'https://us02web.zoom.us/j/511327649',
-        '302': 'https://us02web.zoom.us/j/675315555', '303': 'https://us02web.zoom.us/j/94638145805',
-        '304': 'https://us02web.zoom.us/j/91097279226'}
+zoom = {'101': 'https://us02web.zoom.us/j/384956974?pwd=mkn', '102': 'https://us02web.zoom.us/j/958115833?pwd=mkn',
+        '103': 'https://us02web.zoom.us/j/212767337?pwd=mkn', '104': 'https://us02web.zoom.us/j/993690805?pwd=mkn',
+        '201': 'https://us02web.zoom.us/j/812916426?pwd=mkn', '202': 'https://us02web.zoom.us/j/933271498?pwd=mkn',
+        '203': 'https://us02web.zoom.us/j/811738408?pwd=mkn', '301': 'https://us02web.zoom.us/j/511327649?pwd=mkn',
+        '302': 'https://us02web.zoom.us/j/675315555?pwd=mkn', '303': 'https://us02web.zoom.us/j/94638145805?pwd=mkn',
+        '304': 'https://us02web.zoom.us/j/91097279226?pwd=mkn'}
 groups_calendar = {'20.Б01-мкн': 'https://calendar.google.com/calendar/u/0?cid=ZGNkcTBrNDgxcDNhbms1Y2c0bmtqYXV0aThAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ',
                    '20.Б02-мкн': 'https://calendar.google.com/calendar/u/0?cid=NW1mdW10a2dqMm91Y3A0aTJpYW92YmhybW9AZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ',
                    '20.Б03-мкн': 'https://calendar.google.com/calendar/u/0?cid=aTBzcjBsaGRtcXI3Zzd0bDZocTg4Y3ZzZ2tAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ',
@@ -124,12 +124,15 @@ def send_text(message):
 
     elif message.text.lower() == 'изменить статус уведомлений':
         status = db_requests.get_user_subscribe_status(str(message.from_user.id))
-        if status == 1:
-            bot.send_message(message.chat.id, 'Уведомления: отключены')
-            db_requests.unsubscribe(str(message.from_user.id))
+        if status == 'no':
+            bot.send_message(message.chat.id, 'Необходимо сначала выбрать группу')
         else:
-            bot.send_message(message.chat.id, 'Уведомления: включены')
-            db_requests.subscribe(str(message.from_user.id))
+            if status == 1:
+                bot.send_message(message.chat.id, 'Уведомления: отключены')
+                db_requests.unsubscribe(str(message.from_user.id))
+            else:
+                bot.send_message(message.chat.id, 'Уведомления: включены')
+                db_requests.subscribe(str(message.from_user.id))
 
 
 @bot.message_handler(content_types=['sticker'])

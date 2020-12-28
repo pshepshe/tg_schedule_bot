@@ -26,7 +26,7 @@ while True:
             schedule = db_requests.get_schedule(str(chat_id))
             schedule = schedule[datetime.datetime.today().weekday()]
             lectures = current_lecture(db_requests.time_in_right_form(), schedule).split('\n')
-            if db_requests.get_user_subscribe_status(chat_id) == 1:
+            if db_requests.get_user_subscribe_status(str(chat_id)) == 1:
                 for lecture in lectures:
                     kek = lecture[:5]
                     if lecture[:5] == time_with_delay[1:]:

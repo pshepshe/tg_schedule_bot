@@ -1,10 +1,9 @@
 import sqlite3
 import datetime
-import sqlalchemy
 from os import path
 
 
-working_directory = path.abspath('bot.py').replace('bot\\bot.py', 'data\\users_data.db')
+working_directory = path.abspath('bot.py').replace('bot\\bot.py', 'data\\users_data2.db')
 print(working_directory)
 
 
@@ -59,7 +58,10 @@ def get_user_subscribe_status(user_id):
     connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
     subscribe_status = db_cursor.execute('SELECT subscribe_status FROM users WHERE id = ' + user_id).fetchone()
-    return subscribe_status[0]
+    if subscribe_status == None:
+        return 'no'
+    else:
+        return subscribe_status[0]
 
 def time_plus_ten_minutes(time):
     minute = int(time[4]) + 1
