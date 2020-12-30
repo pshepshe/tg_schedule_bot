@@ -130,23 +130,28 @@ def get_schedule(user_id):
     :param user_id: id пользователя, который принимается в виде строки
     :return: список с расписанием или 0, если у пользователя не выбрана группа
     """
-    # массив с информацией о стобцах
     connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
+    # получение названия группы для пользователя
     group = db_cursor.execute('SELECT group_number FROM users WHERE id =' + user_id).fetchall()
     if group == []:
         return 0
     group = '"' + group[0][0] + '"'
+    # список со столбцами таблицы с расписанием в базе данных
     list_of_time = db_cursor.execute('PRAGMA table_info(schedule)').fetchall()
+    # счетчик столбцов с уникальным врменем в таблице базы данных
     counter_of_lectures = 1
+    # инициализация списка с расписанием
     schedule = []
     for day_of_week in range(6):
         schedule.append('')
+        # цикл для перебора лекицй в определенный день(day_of_week)
+        # при этом каждый элемент в list_of_time выглядит как строка, перый элемент которой является номером дня недели
         while list_of_time[counter_of_lectures][1][0] == str(day_of_week):
             current_time = list_of_time[counter_of_lectures][1]
             current_lecture = db_cursor.execute('SELECT ' + '"' + current_time + '"' +
                                                 ' FROM schedule WHERE group_id = ' + group).fetchall()[0][0]
-            # для исключения из листа промежутков отсутствия лекций
+            # для исключения из списка промежутков отсутствия лекций
             if current_lecture != '':
                 schedule[day_of_week] = schedule[day_of_week] + current_time[1:6:1] + ' ' + current_lecture + '\n'
             counter_of_lectures += 1
