@@ -1,13 +1,14 @@
 import re
 from googleapiclient.discovery import build
 from oauth2client import file as oauth_file, client, tools
+import datetime
 
 
 week = {"ПОНЕДЕЛЬНИК": 0, "ВТОРНИК": 1, "СРЕДА": 2, "ЧЕТВЕРГ": 3, "ПЯТНИЦА": 4, "СУББОТА": 5, "День": 'День'}
 
 
 def row_only_with_time(columns):
-    """Создает пустой список длины columns
+    """Создает список длины columns с пустыми строками в качестве элементов
 
     :param columns: длина списка
     :return: список с пустыми строками
@@ -35,38 +36,28 @@ def add_row_without_duplicate(schedule_table, row, column_n, row_n):
     return 0, schedule_table
 
 
-def time_of_lecture_end(time):
+def time_of_lecture_end(lecture_start):
     """Прибовляет к времени время одной пары и возвращает значение времени в формате string
 
-    :param time: время формата hh:mm
+    :param lecture_start: время формата hh:mm
     :return: время формата hh:mm
     """
-    minute = int(time[4]) + 5
-    if minute >= 10:
-        time = time[:3] + str(int(time[3]) + 1) + '0'
-    else:
-        time = time[:4] + str(int(time[4]) + 5)
-    minute = int(time[3]) + 3
-    if minute >= 6:
-        time = time[:1] + str(int(time[1]) + 1) + ':' + str(int(time[3]) + 3 - 6) + time[4]
-    else:
-        time = time[:3] + str(minute) + time[4]
-    hour = int(time[1]) + 1
-    if hour >= 10:
-        time = str(int(time[0]) + 1) + '0' + time[2:]
-    else:
-        time = time[0] + str(int(time[1]) + 1) + time[2:]
+    date = datetime.datetime.today().date()
+    start_time = datetime.time(int(lecture_start[:2]), int(lecture_start[3:5]))
+    lecture_start = datetime.datetime.combine(date, start_time)
+    lecture_end = lecture_start + datetime.timedelta(minutes=95)
+    time = str(lecture_end.time())[:5]
     return time
 
 
 def lectures_right_time(schedule_table):
-    """Проверяет таблицу с расписанием на наличие дополнительной информации о начале лекции и редактирует спсиок с
-    с расписанием на основе этой информации
+    """Проверяет таблицу с расписанием на наличие дополнительной информации о начале лекции и редактирует ee
+     на основе этой информации, добавляя новые ряды со временем
 
     :param schedule_table: двумерный список с расписанием
     :return: двумерный список с учетом дополнительной информации о начале лекций
     """
-    added_rows = 0
+    added_rows = 0 # количество вставленных рядов
     for row_number in range(len(schedule_table)):
         row_number += added_rows
         for column_number in range(len(schedule_table[row_number])):
@@ -76,14 +67,12 @@ def lectures_right_time(schedule_table):
                 time_position_start = time_position.span()[0]
                 time_position_end = time_position.span()[1]
                 time = cell[time_position_start+2:time_position_end:1]
-                new_row = row_only_with_time(21)
+                new_row = row_only_with_time(8)
                 new_row[1] = time.replace('-', ':') + ' - ' + time_of_lecture_end(time).replace('-', ':')
-                #new_row[1] = new_row[1]
                 new_row[column_number] = cell
                 complete_check, schedule_table = add_row_without_duplicate(schedule_table, new_row, column_number, row_number)
                 schedule_table[row_number][column_number] = ''
                 if complete_check != 1:
-                    #new_row[1] = new_row[1] + ' - ' + time_of_lecture_end(time).replace('-', ':')
                     schedule_table.insert(row_number + 1, new_row)
                     added_rows += 1
     return schedule_table
@@ -137,10 +126,10 @@ def write_row(row, file, false_columns):
 
 
 def write_to_file(file_name, list_to_write):
-    """Переписывает лист в файл с разделителем '|'
+    """Переписывает список с расписанием в файл с разделителем '|'
 
     :param file_name: название файла
-    :param list_to_write: лист, который небходимо переписать
+    :param list_to_write: двумерный список, который небходимо переписать
     :return: ничего
     """
     false_columns = get_false_positions(list_to_write)
@@ -154,7 +143,6 @@ def write_to_file(file_name, list_to_write):
                 table.write(str(week[day]))
             write_row(row, table, false_columns)
             table.write('\n')
-    return 0
 
 
 # авторизация
@@ -167,16 +155,15 @@ if not creds or creds.invalid:
     flow = client.flow_from_clientsecrets('credenti.json', SCOPES)
     creds = tools.run_flow(flow, store)
 service = build('script', 'v1', credentials=creds)
-
+# id скрипта на google app scripts
 script_id = '12PnuBrX1CIKwIjJyyoe-UWh0Fyo7roJW-or0jQEx0NeCJaIvbaeGUgcA'
-
 request = {"function": "create_table"}
-
+# получение оргинальной таблицы с расписанием в виде двумерного массиива с помощью google app scripts
 response = service.scripts().run(body=request, scriptId=script_id).execute()
 schedule = response['response']['result']
-print(schedule)
-print(clear_schedule(schedule))
-print(lectures_right_time(schedule))
+# очистка таблицы от лишних элементов и ее перепичывание для корректного времени начла лекций
+clear_schedule(schedule)
+lectures_right_time(schedule)
 write_to_file('schedule_data2.csv', schedule)
 
 
