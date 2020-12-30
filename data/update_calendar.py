@@ -22,7 +22,7 @@ credentials = ServiceAccountCredentials.from_json_keyfile_name(
 )
 httpAuth = credentials.authorize(httplib2.Http())
 service = apiclient.discovery.build('calendar', 'v3', http=httpAuth)
-
+# шаблон события для записи в календарь
 event = {
     "summary": 'test_event',
     "description": 'none',
@@ -35,7 +35,25 @@ event = {
         'timeZone': 'Europe/Moscow',
     }
 }
-#service.events().insert(calendarId=calendar_ident, body=event).execute()
+# удаление прошлых событий из календаря
+current_date = datetime.today()
+current_day = datetime.today().weekday()
+
+for current_group in groups_calendar:
+    page_token = None
+    while True:
+        events = service.events().list(calendarId=groups_calendar[current_group], pageToken=page_token).execute()
+        page_token = events.get('nextPageToken')
+        events = events['items']
+        for current_event in events:
+            event_time = current_event['start']['dateTime'][:10]
+            print(event_time)
+            event_time = datetime(int(event_time[:4]), int(event_time[5:7]), int(event_time[8:10]))
+            if current_date > event_time + timedelta(days=1):
+                service.events().delete(calendarId=groups_calendar[current_group], eventId=current_event['id']).execute()
+        if not page_token:
+            break
+# запись расписания в двумерный список
 current_date = datetime.today().date()
 current_day = datetime.today().weekday()
 print(current_date)
@@ -48,26 +66,39 @@ with open('schedule_data2.csv', 'r') as schedule:
     while current_line != ['']:
         schedule_table.append(current_line)
         current_line = schedule.readline().split('|')
-
-for delta_day in range(7):
+# цикл для записи в календарь расписания на следующие schedule days
+schedule_days = 7
+for delta_day in range(schedule_days):
+    # номер дня недели, для которого нужно записать расписание
     day = str((int(datetime.today().weekday()) + delta_day) % 7)
     for time_line in schedule_table:
         for group_number in range(len(time_line) - 2):
-            current_lecture = time_line[group_number + 2]
-            check_event_existence = 0
-            date = current_date + timedelta(days=delta_day)
-            current_group = groups[group_number + 2]
-            events = service.events().list(calendarId=groups_calendar[current_group]).execute()
-            for current_event in events['items']:
-                kek1 = current_event['start']['dateTime'][:10]
-                kek2 = current_event['summary']
-                if (current_lecture == current_event['summary']) & (str(date) == current_event['start']['dateTime'][:10]):
-                    check_event_existence = 1
-            if (current_lecture != '') & (current_lecture != '\n') & (check_event_existence == 0) & (time_line[0] == day):
-                event['summary'] = current_lecture
-                event['start']['dateTime'] = str(date) + 'T' + time_line[1][:5] + ':00'
-                event['end']['dateTime'] = str(date) + 'T' + time_line[1][8:] + ':00'
+            page_token = None
+            # пробегает по всем выдаваемым странциам событий
+            while True:
+                current_lecture = time_line[group_number + 2]
+                check_event_existence = 0
+                # объект datetime для врмени, на которое нужно записать лекцию
+                date = current_date + timedelta(days=delta_day)
                 current_group = groups[group_number + 2]
-                if groups_calendar[current_group] != '':
-                    service.events().insert(calendarId=groups_calendar[current_group], body=event).execute()
+                events = service.events().list(calendarId=groups_calendar[current_group], pageToken=page_token).execute()
+                # google выдает все события страницами и оставляет nextPageToken для доступа у следующей странице
+                page_token = events.get('nextPageToken')
+                # проверка на существование одинаковых событий
+                for current_event in events['items']:
+                    if (current_lecture == current_event['summary']) & (str(date) == current_event['start']['dateTime'][:10]):
+                        check_event_existence = 1
+                # операция записи собтия в календарь
+                if (current_lecture != '') & (current_lecture != '\n') & (check_event_existence == 0) & (time_line[0] == day):
+                    event['summary'] = current_lecture
+                    event['start']['dateTime'] = str(date) + 'T' + time_line[1][:5] + ':00'
+                    event['end']['dateTime'] = str(date) + 'T' + time_line[1][8:] + ':00'
+                    current_group = groups[group_number + 2]
+                    if groups_calendar[current_group] != '':
+                        try:
+                            service.events().insert(calendarId=groups_calendar[current_group], body=event).execute()
+                        except:
+                            print('??')
+                if not page_token:
+                    break
 
