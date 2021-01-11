@@ -2,9 +2,9 @@ import telebot
 import datetime
 import db_requests
 
-
-bot = telebot.TeleBot('1354814437:AAFh9fX9O1NT1RzUwvC0YhZcaEMT52HcqRs')
-
+with open('api_key', 'r') as file_key:
+    key = file_key.readline()
+    bot = telebot.TeleBot(key)
 day_of_week = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
 groups = ['20.Б01-мкн', '20.Б02-мкн', '20.Б03-мкн', '20.Б04-мкн', '20.Б05-мкн', '20.Б06-мкн']
 all_groups = []
