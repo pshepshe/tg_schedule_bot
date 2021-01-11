@@ -1,9 +1,12 @@
 import sqlite3
 import datetime
 from os import path
+from sys import platform
 
-
-working_directory = path.abspath('bot.py').replace('bot\\bot.py', 'data\\users_data.db')
+if platform == 'win32':
+    working_directory = path.abspath('bot.py').replace('bot\\bot.py', 'data\\users_data.db')
+if platform.find('linux'):
+    working_directory = path.abspath('bot.py').replace('bot/bot.py', 'data/users_data.db')
 print(working_directory)
 
 
