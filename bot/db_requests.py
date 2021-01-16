@@ -35,7 +35,7 @@ def subscribe(user_id):
     '''Подписывает пользователя на рассылку'''
     connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
-    db_cursor.execute('''UPDATE users SET subscribe_status = 1 WHERE id = ''' + '"' + user_id + '"')
+    db_cursor.execute('UPDATE users SET subscribe_status = 1 WHERE id = ' + '"' + user_id + '"')
     connection.commit()
     connection.close()
 
@@ -44,7 +44,7 @@ def unsubscribe(user_id):
     """Отписывает пользователя от рассылки"""
     connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
-    db_cursor.execute('''UPDATE users SET subscribe_status = 0 WHERE id = ''' + '"' + user_id + '"')
+    db_cursor.execute('UPDATE users SET subscribe_status = 0 WHERE id = ' + '"' + user_id + '"')
     connection.commit()
     connection.close()
 
@@ -53,14 +53,14 @@ def all_subscribed_users(user_id):
     '''Казалось бы, достает всех подписанных пользователей, но на деле -- делает, что хочет'''
     connection = sqlite3.connect('working_directory')
     db_cursor = connection.cursor()
-    db_cursor.execute('''SELECT subscribe_status FROM users WERE subscribe_status = 1''')
+    db_cursor.execute('SELECT subscribe_status FROM users WERE subscribe_status = 1')
     subscribed_users = db_cursor.fetchall()
 
 
 def get_user_subscribe_status(user_id):
     connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
-    subscribe_status = db_cursor.execute('SELECT subscribe_status FROM users WHERE id = ' + user_id).fetchone()
+    subscribe_status = db_cursor.execute(f'SELECT subscribe_status FROM users WHERE id = {user_id}').fetchone()
     if subscribe_status == None:
         return 'no'
     else:
@@ -136,7 +136,7 @@ def get_schedule(user_id):
     connection = sqlite3.connect(working_directory)
     db_cursor = connection.cursor()
     # получение названия группы для пользователя
-    group = db_cursor.execute('SELECT group_number FROM users WHERE id =' + user_id).fetchall()
+    group = db_cursor.execute(f'SELECT group_number FROM users WHERE id = {user_id}').fetchall()
     if group == []:
         return 0
     group = '"' + group[0][0] + '"'
@@ -152,7 +152,7 @@ def get_schedule(user_id):
         # при этом каждый элемент в list_of_time выглядит как строка, перый элемент которой является номером дня недели
         while list_of_time[counter_of_lectures][1][0] == str(day_of_week):
             current_time = list_of_time[counter_of_lectures][1]
-            current_lecture = db_cursor.execute('SELECT ' + '"' + current_time + '"' +
+            current_lecture = db_cursor.execute(f'SELECT ' + '"' + current_time + '"' +
                                                 ' FROM schedule WHERE group_id = ' + group).fetchall()[0][0]
             # для исключения из списка промежутков отсутствия лекций
             if current_lecture != '':
