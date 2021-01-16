@@ -5,7 +5,7 @@ connection = sqlite3.connect('users_data.db')
 
 db_cursor = connection.cursor()
 try:
-    db_cursor.execute("CREATE TABLE schedule(group_id text PRIMARY KEY)")
+    db_cursor.execute('CREATE TABLE schedule(group_id text PRIMARY KEY)')
 except:
     print('')
 
@@ -17,23 +17,25 @@ except:
     print('')
 
 with open ('schedule_data2.csv','r', encoding='windows-1251') as table:
-    row = table.readline()
-    row = row.split('|')
-    for column in range(2, len(row)):
+    # массив с группами
+    groups = table.readline()
+    groups = groups.split('|')
+    for column in range(2, len(groups)):
         db_cursor.execute('''REPLACE INTO schedule(group_id)
-        VALUES(?)''', [row[column].replace('\n', '')])
-    row[7] = row[7].replace('\n', '')
-    stroka = table.readline()
-    while stroka != '':
-        stroka = stroka.split('|')
-        hor_vid = '"' + stroka[0] + stroka[1][0:5:1] + '"'
+        VALUES(?)''', [groups[column].replace('\n', '')])
+    groups[7] = groups[7].replace('\n', '')
+    # массив с временем и лекциями в это время
+    lectures_current_time = table.readline()
+    while lectures_current_time != '':
+        lectures_current_time = lectures_current_time.split('|')
+        lecture_time = '"' + lectures_current_time[0] + lectures_current_time[1][0:5:1] + '"'
         try:
-            db_cursor.execute('''ALTER TABLE schedule ADD''' + hor_vid)
+            db_cursor.execute('ALTER TABLE schedule ADD' + lecture_time)
         except:
             print('')
-        for column in range(2, len(row)):
-            db_cursor.execute('''UPDATE schedule SET ''' + hor_vid + '=' + '"' + stroka[column].replace('\n', '').replace('"', '') + '"'
-                              + ' WHERE group_id = ' + '"' + row[column] + '"')
-        stroka = table.readline()
+        for column in range(2, len(groups)):
+            db_cursor.execute('UPDATE schedule SET ' + lecture_time + '=' + '"' + lectures_current_time[column].replace('\n', '').replace('"', '') + '"'
+                              + ' WHERE group_id = ' + '"' + groups[column] + '"')
+        lectures_current_time = table.readline()
 
 connection.commit()
