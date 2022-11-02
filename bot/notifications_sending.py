@@ -14,7 +14,7 @@ def current_lecture(time_now, lectures):
     return lectures
 
 
-bot = telebot.TeleBot('1475926428:AAHcGfNcx0VpOvPkiQt6_1EuRjajyMo86UY')
+bot = telebot.TeleBot('')
 
 
 while True:
